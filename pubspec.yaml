@@ -1,6 +1,6 @@
 name: restified
 description: ORM Rest API for Flutter
-version: 0.0.18
+version: 0.0.19
 homepage: https://github.com/caviezel/restified
 
 environment:

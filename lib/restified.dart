@@ -40,11 +40,12 @@ class Response implements IResponse {
   dynamic get data => d;
 }
 
-class HttpCallback<T> {
-  final void Function(IResponse, T) onResponse;
-  final void Function(int) onFailure;
+class HttpResult<T, E> {
+  final IResponse response;
+  final T data;
+  final E error;
 
-  HttpCallback({this.onResponse, this.onFailure});
+  HttpResult({this.response, this.data, this.error});
 }
 
 class Http {
@@ -59,79 +60,67 @@ class Http {
     }
   }
 
-  Future<void> getOne<T>(String endpoint, Serializable<T> template,
-      HttpCallback<T> callback) async {
+  Future<HttpResult<T, int>> getOne<T>(
+      String endpoint, Serializable<T> template) async {
     dartHttp.Response response =
         await dartHttp.get('$url$endpoint', headers: headers);
     if (response.statusCode != 200) {
-      if (callback.onFailure != null) {
-        callback?.onFailure(response.statusCode);
-      }
-    } else {
-      IResponse resp = parseResponse(response.body);
-      T result = resp.success ? template.fromJson(resp.data) : null;
-      callback?.onResponse(resp, result);
+      return HttpResult(error: response.statusCode);
     }
+
+    IResponse resp = parseResponse(response.body);
+    T result = resp.success ? template.fromJson(resp.data) : null;
+    return HttpResult(response: resp, data: result);
   }
 
-  Future<void> getList<T>(String endpoint, Serializable<T> template,
-      HttpCallback<List<T>> callback) async {
+  Future<HttpResult<List<T>, int>> getList<T>(
+      String endpoint, Serializable<T> template) async {
     dartHttp.Response response =
         await dartHttp.get('$url$endpoint', headers: headers);
     if (response.statusCode != 200) {
-      if (callback.onFailure != null) {
-        callback?.onFailure(response.statusCode);
-      }
-    } else {
-      IResponse resp = parseResponse(response.body);
-      List<T> results = resp.success
-          ? (resp.data as List).map((i) => template.fromJson(i)).toList()
-          : null;
-      callback?.onResponse(resp, results);
+      return HttpResult<List<T>, int>(error: response.statusCode);
     }
+
+    IResponse resp = parseResponse(response.body);
+    List<T> list = resp.success
+        ? (resp.data as List).map((i) => template.fromJson(i)).toList()
+        : null;
+    return HttpResult<List<T>, int>(response: resp, data: list);
   }
 
-  Future<void> post(
-      String endpoint, Map data, HttpCallback<int> callback) async {
+  Future<HttpResult<int, int>> post(String endpoint, Map data) async {
     dartHttp.Response response = await dartHttp.post('$url$endpoint',
         headers: headers, body: json.encode(data));
     if (response.statusCode != 200) {
-      if (callback.onFailure != null) {
-        callback?.onFailure(response.statusCode);
-      }
-    } else {
-      IResponse resp = parseResponse(response.body);
-      int id = resp.success ? resp.data['id'] : null;
-      callback?.onResponse(resp, id);
+      return HttpResult<int, int>(error: response.statusCode);
     }
+
+    IResponse resp = parseResponse(response.body);
+    int id = resp.success ? resp.data['id'] : null;
+    return HttpResult<int, int>(response: resp, data: id);
   }
 
-  Future<void> put(
-      String endpoint, Map data, HttpCallback<int> callback) async {
+  Future<HttpResult<int, int>> put(String endpoint, Map data) async {
     dartHttp.Response response = await dartHttp.put('$url$endpoint',
         headers: headers, body: json.encode(data));
     if (response.statusCode != 200) {
-      if (callback.onFailure != null) {
-        callback?.onFailure(response.statusCode);
-      }
-    } else {
-      IResponse resp = parseResponse(response.body);
-      int affectedRows = resp.success ? resp.data['affected_rows'] : null;
-      callback?.onResponse(resp, affectedRows);
+      return HttpResult<int, int>(error: response.statusCode);
     }
+
+    IResponse resp = parseResponse(response.body);
+    int affectedRows = resp.success ? resp.data['affected_rows'] : null;
+    return HttpResult<int, int>(data: affectedRows, response: resp);
   }
 
-  Future<void> delete(String endpoint, HttpCallback<int> callback) async {
+  Future<HttpResult<int, int>> delete(String endpoint) async {
     dartHttp.Response response =
         await dartHttp.delete('$url$endpoint', headers: headers);
     if (response.statusCode != 200) {
-      if (callback.onFailure != null) {
-        callback?.onFailure(response.statusCode);
-      }
-    } else {
-      IResponse resp = parseResponse(response.body);
-      int affectedRows = resp.success ? resp.data['affected_rows'] : null;
-      callback?.onResponse(resp, affectedRows);
+      return HttpResult<int, int>(error: response.statusCode);
     }
+
+    IResponse resp = parseResponse(response.body);
+    int affectedRows = resp.success ? resp.data['affected_rows'] : null;
+    return HttpResult<int, int>(data: affectedRows, response: resp);
   }
 }

@@ -23,62 +23,70 @@ void main() {
   int lastInsertId;
   group('Http', () {
     test('get success', () async {
-      await http.getOne('/1', InventoryType(), HttpCallback<InventoryType>(
-          onResponse: (IResponse response, InventoryType result) {
-        expect(response.success, true);
-        expect(result.id, 1);
-      }));
+      HttpResult<InventoryType, int> result =
+          await http.getOne('/1', InventoryType());
+      expect(result.response.success, true);
+      expect(result.data.id, 1);
     });
 
     test('get fail', () async {
-      await http.getOne('/10000000', InventoryType(),
-          HttpCallback<InventoryType>(
-              onResponse: (IResponse response, InventoryType result) {
-        expect(response.success, false);
-        expect(result, null);
-      }));
+      HttpResult<InventoryType, int> result = await http.getOne(
+        '/10000000',
+        InventoryType(),
+      );
+      expect(result.response.success, false);
+      expect(result.data, null);
     });
 
     test('get all success', () async {
-      await http.getList('', InventoryType(), HttpCallback<List<InventoryType>>(
-          onResponse: (IResponse response, List<InventoryType> results) {
-        expect(response.success, true);
-        expect(results.length, 5);
-      }));
+      HttpResult<List<InventoryType>, int> result =
+          await http.getList('', InventoryType());
+      expect(result.response.success, true);
+      expect(result.data.length, 5);
     });
 
     test('get all fail', () async {
-      await http.getList(
-          'sdsds',
-          InventoryType(),
-          HttpCallback<List<InventoryType>>(
-              onFailure: (int statusCode) => expect(statusCode, 404)));
+      HttpResult<List<InventoryType>, int> result =
+          await http.getList('sdsds', InventoryType());
+      expect(result.data, null);
+      expect(result.response, null);
+      expect(result.error, 404);
     });
 
     test('insert', () async {
       InventoryType p = InventoryType(name: 'test123');
-      await http.post('', p.toJson(),
-          HttpCallback<int>(onResponse: (IResponse response, int id) {
-        expect(response.success, true);
-        lastInsertId = id;
-      }));
+      HttpResult<int, int> result = await http.post('', p.toJson());
+      expect(result.response.success, true);
+      lastInsertId = result.data;
     });
 
     test('update', () async {
       InventoryType p = InventoryType(name: 'test2100');
-      await http.put('/$lastInsertId', p.toJson(),
-          HttpCallback<int>(onResponse: (IResponse response, int affectedRows) {
-        expect(response.success, true);
-        expect(affectedRows, 1);
-      }));
+      HttpResult<int, int> result =
+          await http.put('/$lastInsertId', p.toJson());
+      expect(result.response.success, true);
+      expect(result.data, 1);
     });
 
     test('delete', () async {
-      await http.delete('/$lastInsertId',
-          HttpCallback<int>(onResponse: (IResponse response, int affectedRows) {
-        expect(response.success, true);
-        expect(affectedRows, 1);
-      }));
+      HttpResult<int, int> result = await http.delete('/$lastInsertId');
+      expect(result.response.success, true);
+      expect(result.data, 1);
     });
+  });
+
+  test('update fail', () async {
+    InventoryType p = InventoryType(name: 'test2100');
+    HttpResult<int, int> result = await http.put('', p.toJson());
+    expect(result.response, null);
+    expect(result.data, null);
+    expect(result.error, 405);
+  });
+
+  test('delete fail', () async {
+    HttpResult<int, int> result = await http.delete('');
+    expect(result.response, null);
+    expect(result.data, null);
+    expect(result.error, 405);
   });
 }
